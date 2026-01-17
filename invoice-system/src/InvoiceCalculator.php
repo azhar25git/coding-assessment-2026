@@ -19,19 +19,27 @@ class InvoiceCalculator {
      * @return float Tax amount
      */
     public static function calculateTax($subtotal, $region = 'US-CA') {
-        // TEMPORARY hardcoded value - need to load from JSON
-        // Client said tax rates change frequently so should be in config
-        $taxRate = 0.10;
 
-        // TODO: Load from tax_rates.json like this:
-        // $taxData = json_decode(file_get_contents('data/tax_rates.json'), true);
-        // Parse $region to get country and state
-        // Look up actual rate
-        // Handle default rates
-        //
-        // Ran out of time Friday, will fix Monday
+        // subtotal: required, numeric, > 0
+        $subtotal = trim($subtotal ?? null);
+        if (!isset($subtotal) || !is_numeric($subtotal)) {
+            $errors['subtotal'] = 'Subtotal must be a number';
+        } elseif ($subtotal <= 0) {
+            $errors['subtotal'] = 'Subtotal must be greater than 0';
+        }
 
-        return $subtotal * $taxRate;
+        $region = trim($region ?? 'US-CA'); // Default 'US-CA'
+        if (!isset($region) || !is_string($region) || strlen($region) < 2) {
+            $errors['region'] = 'Subtotal must be a valid string';
+        } elseif ($region <= 0) {
+            $errors['region'] = 'Subtotal must be greater than 0';
+        }
+
+        if(!empty($errors)) {
+            throw new Exception(json_encode($errors), 422);
+        }
+
+        return $subtotal * self::taxRateByRegion($region);
     }
 
     /**
@@ -112,5 +120,32 @@ class InvoiceCalculator {
         // TODO: Add actual validation logic
 
         return $errors;
+    }
+
+    public static function taxRateByRegion(string $region): float
+    {
+        static $rates;
+    
+        if ($rates === null) {
+            $rates = json_decode(
+                file_get_contents(__DIR__ . '/../data/tax_rates.json'),
+                true,
+                flags: JSON_THROW_ON_ERROR
+            );
+        }
+    
+        [$country, $state] = array_pad(
+            explode('-', strtoupper(trim($region)), 2),
+            2,
+            null
+        );
+    
+        if (!isset($rates[$country])) {
+            throw new InvalidArgumentException("Unknown country: $country");
+        }
+    
+        return $rates[$country][$state]
+            ?? $rates[$country]['default']
+            ?? throw new RuntimeException("No default rate for $country");
     }
 }
