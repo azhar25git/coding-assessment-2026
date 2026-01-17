@@ -26,7 +26,36 @@ class Invoice {
      * Note: Make sure to use consistent naming!
      */
     public function addItem($name, $price, $quantity) {
-        // No validation yet - add later?
+        // Validations in place
+
+        // Name: required, string, length 1-255
+        $name = trim($name ?? '');
+        if ($name === '') {
+            $errors['name'] = 'Name is required';
+        } elseif (strlen($name) > 255) {
+            $errors['name'] = 'Name cannot exceed 255 characters';
+        }
+
+        // Price: required, numeric, > 0
+        $price = trim($price ?? null);
+        if (!isset($price) || !is_numeric($price)) {
+            $errors['price'] = 'Price must be a number';
+        } elseif ($price <= 0) {
+            $errors['price'] = 'Price must be greater than 0';
+        }
+
+        // Quantity: required, integer, >= 0
+        $quantity = trim($quantity ?? null);
+        if (!isset($quantity) || filter_var($quantity, FILTER_VALIDATE_INT) === false) {
+            $errors['quantity'] = 'Quantity must be an integer';
+        } elseif ((int)$quantity < 0) {
+            $errors['quantity'] = 'Quantity cannot be negative';
+        }
+
+        if(!empty($errors)) {
+            throw new Exception(json_encode($errors), 422);
+        }
+     
         $this->items[] = [
             'name' => $name,
             'price' => $price,
@@ -43,7 +72,7 @@ class Invoice {
             // FIXED!
             $total += $item['price'] * $item['qty'];
         }
-        return $total - $this->discount;
+        return (float) $total - $this->discount;
     }
 
     /**
@@ -105,9 +134,11 @@ class Invoice {
      */
     public function saveToFile($filename = 'data/invoices.json') {
         $data = $this->toArray();
-
+        $contents = '';
         // Should load existing invoices and append
-        $contents = file_get_contents($filename) ?? [];
+        if(file_exists($filename)) {
+            $contents = file_get_contents($filename);
+        }
 
         $invoices = json_decode($contents, true);
         $invoices[] = $data; //append
