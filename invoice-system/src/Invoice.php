@@ -25,7 +25,7 @@ class Invoice {
      * Add an item to the invoice
      * Note: Make sure to use consistent naming!
      */
-    public function addItem($name, $price, $quantity) {
+    public function addItem($name, $price, $qty) {
         // Validations in place
 
         // Name: required, string, length 1-255
@@ -45,11 +45,11 @@ class Invoice {
         }
 
         // Quantity: required, integer, >= 0
-        $quantity = trim($quantity ?? null);
-        if (!isset($quantity) || filter_var($quantity, FILTER_VALIDATE_INT) === false) {
-            $errors['quantity'] = 'Quantity must be an integer';
-        } elseif ((int)$quantity < 0) {
-            $errors['quantity'] = 'Quantity cannot be negative';
+        $qty = trim($qty ?? null);
+        if (!isset($qty) || filter_var($qty, FILTER_VALIDATE_INT) === false) {
+            $errors['qty'] = 'Quantity must be an integer';
+        } elseif ((int)$qty < 0) {
+            $errors['qty'] = 'Quantity cannot be negative';
         }
 
         if(!empty($errors)) {
@@ -59,7 +59,7 @@ class Invoice {
         $this->items[] = [
             'name' => $name,
             'price' => $price,
-            'qty' => $quantity  // Using 'qty' here
+            'qty' => $qty  // Using 'qty' here
         ];
     }
 
@@ -173,8 +173,7 @@ class Invoice {
                 $invoice->discount = $invoiceData['discount'];
 
                 foreach ($invoiceData['items'] as $item) {
-                    // This might break because of the qty/quantity issue
-                    $qty = isset($item['quantity']) ? $item['quantity'] : $item['qty'];
+                    $qty = isset($item['qty']) ? $item['qty'] : $item['qty'];
                     $invoice->addItem($item['name'], $item['price'], $qty);
                 }
 
