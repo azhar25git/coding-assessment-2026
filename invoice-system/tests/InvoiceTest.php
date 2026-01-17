@@ -63,10 +63,7 @@ class InvoiceTest {
 
     /**
      * Test: Calculate total for single item
-     * Status: FAILING ✗
-     *
-     * This test fails because of the qty/quantity mismatch bug
-     * The total comes back as 0 instead of expected value
+     * Status: PASSING ✓
      */
     private function test_calculate_total() {
         $invoice = new Invoice("Test Customer");
@@ -84,9 +81,7 @@ class InvoiceTest {
 
     /**
      * Test: Add multiple items and calculate total
-     * Status: FAILING ✗
-     *
-     * Also fails due to the same qty/quantity bug
+     * Status: PASSING ✓
      */
     private function test_add_multiple_items() {
         $invoice = new Invoice("Test Customer");
