@@ -36,13 +36,12 @@ class Invoice {
 
     /**
      * Calculate total
-     * BUG: This doesn't match up with addItem() - need to fix
      */
     public function getTotal() {
         $total = 0;
         foreach ($this->items as $item) {
-            // Accessing 'quantity' but we stored it as 'qty'!
-            $total += $item['price'] * $item['quantity'];
+            // FIXED!
+            $total += $item['price'] * $item['qty'];
         }
         return $total - $this->discount;
     }
