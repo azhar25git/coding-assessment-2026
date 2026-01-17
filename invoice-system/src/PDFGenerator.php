@@ -75,45 +75,8 @@ class PDFGenerator {
         InvoiceCalculator::validateInvoice($invoice);
 
         $tax = (float) InvoiceCalculator::calculateTax($invoice->getTotal());
-        $subtotal = (float) number_format($invoice->getTotal(), 2);
+        $subtotal = (float) $invoice->getTotal();
         $total = $subtotal + $tax;
-
-        // Basic template - would need styling
-        // $html = '<html><head><title>Invoice</title></head><body>';
-
-        // $html .= '<h1>Invoice #' . $invoice->getId() . '</h1>';
-        // $html .= '<p>Customer: ' . htmlspecialchars($invoice->getCustomer()) . '</p>';
-        // $html .= '<table border="1" style="width:100%;">';
-        // $html .= '<tr><th>Item</th><th>Price</th><th>Quantity</th><th>Total</th></tr>';
-
-        // foreach ($invoice->getItems() as $item) {
-        //     $qty = isset($item['qty']) ? $item['qty'] : $item['qty'];
-        //     $lineTotal = $item['price'] * $qty;
-
-        //     $html .= '<tr>';
-        //     $html .= '<td style="text-align:center;">' . htmlspecialchars($item['name']) . '</td>';
-        //     $html .= '<td style="text-align:center;">$' . number_format($item['price'], 2) . '</td>';
-        //     $html .= '<td style="text-align:center;">' . $qty . '</td>';
-        //     $html .= '<td style="text-align:center;">$' . number_format($lineTotal, 2) . '</td>';
-        //     $html .= '</tr>';
-        // }
-
-        // $html .= '</table>';
-        // $html .= '<div style="display:flex;flex-direction:column;width:100%;text-align:right;margin-top:10px;">';
-
-        // $html .= '<p style="padding-right: 10px;">
-        //             <strong>Subtotal: $' . $subtotal . '</strong>
-        //         </p>';
-        // $html .= '<p style="padding-right: 10px;">
-        //             <strong>Tax: $' . htmlspecialchars($tax) . '</strong>
-        //         </p>';
-        // $html .= '<p style="padding-right: 10px;">
-        //             <strong>Total: $' . $total . '</strong>
-        //         </p>';
-
-        // $html .= '</div>';
-
-        // $html .= '</body></html>';
 
         $html = '
             <!DOCTYPE html>
@@ -149,11 +112,11 @@ class PDFGenerator {
             </tr>
             </thead>
             <tbody>
-            ';
+        ';
 
         foreach ($invoice->getItems() as $item) {
             $qty = (int) $item['qty'];
-            $lineTotal = $item['price'] * $qty;
+            $lineTotal = (float) $item['price'] * $qty;
 
             $html .= '
             <tr>
@@ -186,7 +149,7 @@ class PDFGenerator {
 
             </body>
             </html>
-            ';
+        ';
 
 
         return $html;
