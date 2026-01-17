@@ -1,5 +1,6 @@
 <?php
 
+require_once 'vendor/autoload.php';
 use App\Invoice;
 use App\InvoiceCalculator;
 
@@ -12,8 +13,6 @@ use App\InvoiceCalculator;
  *
  * Run with: php run_tests.php
  */
-
-require_once 'vendor/autoload.php';
 
 class InvoiceTest {
 
@@ -32,6 +31,9 @@ class InvoiceTest {
         $this->test_calculate_total();
         $this->test_calculate_total_fail();
         $this->test_add_multiple_items();
+        $this->test_throws_error_at_wrong_name();
+        $this->test_throws_error_at_wrong_price();
+        $this->test_throws_error_at_wrong_qty();
         $this->test_save_and_load();
         $this->test_tax_calculation();
 
@@ -117,6 +119,94 @@ class InvoiceTest {
             "test_add_multiple_items",
             "Total should be $70.00, got $" . number_format($actual, 2)
         );
+    }
+
+    /**
+     * Test: Add multiple items and calculate total wrong data
+     * Status: PASSING ✓
+     */
+    private function test_throws_error_at_wrong_name() {
+        try {
+            $invoice = new Invoice("Test Customer");
+            $invoice->addItem("", 10.00, 2);
+            $invoice->addItem("", 15.00, 4);
+    
+            $expected = 20.00;
+            $actual = $invoice->getTotal();
+    
+            $this->assert(
+                $actual === $expected,
+                "test_throws_error_at_wrong_name",
+                "Total should be $70.00, got $" . number_format($actual, 2)
+            );
+        }
+        catch(Exception $e) {
+            $actual = $e->getMessage();
+            $expected = '{"items":{"name":["Item name can not be empty :0"]}}';
+            $this->assert(
+                $actual === $expected,
+                "test_throws_error_at_wrong_name",
+                $actual
+            );
+        }
+    }
+
+    /**
+     * Test: Add multiple items and calculate total wrong data
+     * Status: PASSING ✓
+     */
+    private function test_throws_error_at_wrong_price() {
+        try {
+            $invoice = new Invoice("Test Customer");
+            $invoice->addItem("A", -10.00, 2);
+            $invoice->addItem("B", -15.00, 4);
+    
+            $expected = 20.00;
+            $actual = $invoice->getTotal();
+            $this->assert(
+                $actual === $expected,
+                "test_throws_error_at_wrong_price",
+                "Total should be $70.00, got $" . number_format($actual, 2)
+            );
+        }
+        catch(Exception $e) {
+            $actual = $e->getMessage();
+            $expected = '{"items":{"price":["Price must be greater than 0:0"]}}';
+            $this->assert(
+                $actual === $expected,
+                "test_throws_error_at_wrong_price",
+                $actual
+            );
+        }
+    }
+    /**
+     * Test: Add multiple items and calculate total wrong data
+     * Status: PASSING ✓
+     */
+    private function test_throws_error_at_wrong_qty() {
+        try {
+            $invoice = new Invoice("Test Customer");
+            $invoice->addItem("A", 10.00, 0);
+            $invoice->addItem("B", 15.00, -4);
+    
+            $expected = 20.00;
+            $actual = $invoice->getTotal();
+    
+            $this->assert(
+                $actual === $expected,
+                "test_throws_error_at_wrong_qty",
+                "Total should be $20.00, got $" . number_format($actual, 2)
+            );
+        }
+        catch(Exception $e) {
+            $actual = $e->getMessage();
+            $expected = '{"items":{"qty":["At least one item need to be added:0"]}}';
+            $this->assert(
+                $actual === $expected,
+                "test_throws_error_at_wrong_qty",
+                $actual
+            );
+        }
     }
 
     /**
