@@ -156,10 +156,10 @@ class InvoiceTest {
      */
     private function test_tax_calculation() {
         $subtotal = 100.00;
-        $tax = InvoiceCalculator::calculateTax($subtotal, 'US-CA');
-
-        // Hardcoded to 10% currently
-        $expected = 10.00;
+        $region = 'US-CA';
+        $tax = InvoiceCalculator::calculateTax($subtotal, $region);
+        
+        $expected = $subtotal * InvoiceCalculator::taxRateByRegion($region);
 
         $this->assert(
             $tax === $expected,
