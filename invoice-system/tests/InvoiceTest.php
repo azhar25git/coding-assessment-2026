@@ -164,7 +164,11 @@ class InvoiceTest {
         $this->assert(
             $tax === $expected,
             "test_tax_calculation",
-            "Tax should be $10.00, got $" . number_format($tax, 2)
+            sprintf(
+                "Tax should be %d, got %d", 
+                number_format($expected, 2), 
+                number_format($tax, 2)
+            )
         );
     }
 
