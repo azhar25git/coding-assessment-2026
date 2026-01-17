@@ -17,7 +17,7 @@ class Invoice {
 
     public function __construct($customerName) {
         $this->customer = $customerName;
-        $this->id = microtime(); // Not sure if this is the best approach...
+        $this->id = hrtime(true); // Not sure if this is the best approach...
         $this->createdAt = date('Y-m-d H:i:s');
     }
 
