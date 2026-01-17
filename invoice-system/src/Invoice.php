@@ -17,7 +17,7 @@ class Invoice {
 
     public function __construct($customerName) {
         $this->customer = $customerName;
-        $this->id = time(); // Not sure if this is the best approach...
+        $this->id = microtime(); // Not sure if this is the best approach...
         $this->createdAt = date('Y-m-d H:i:s');
     }
 
@@ -106,12 +106,14 @@ class Invoice {
     public function saveToFile($filename = 'data/invoices.json') {
         $data = $this->toArray();
 
-        // This is wrong - overwrites the whole file!
         // Should load existing invoices and append
-        // But json_encode is easier for now...
-        file_put_contents($filename, json_encode($data, JSON_PRETTY_PRINT));
+        $contents = file_get_contents($filename) ?? [];
 
-        // TODO: Fix this before client demo!
+        $invoices = json_decode($contents, true);
+        $invoices[] = $data; //append
+        
+        file_put_contents($filename, json_encode($invoices, JSON_PRETTY_PRINT));
+
         return true;
     }
 
