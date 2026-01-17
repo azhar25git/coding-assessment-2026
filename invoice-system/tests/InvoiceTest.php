@@ -1,5 +1,8 @@
 <?php
 
+use App\Invoice;
+use App\InvoiceCalculator;
+
 /**
  * Basic tests for Invoice system
  *
@@ -10,9 +13,7 @@
  * Run with: php run_tests.php
  */
 
-require_once __DIR__ . '/../src/Invoice.php';
-require_once __DIR__ . '/../src/InvoiceCalculator.php';
-require_once __DIR__ . '/../src/PDFGenerator.php';
+require_once 'vendor/autoload.php';
 
 class InvoiceTest {
 
@@ -29,6 +30,7 @@ class InvoiceTest {
 
         $this->test_create_invoice();
         $this->test_calculate_total();
+        $this->test_calculate_total_fail();
         $this->test_add_multiple_items();
         $this->test_save_and_load();
         $this->test_tax_calculation();
@@ -75,6 +77,24 @@ class InvoiceTest {
         $this->assert(
             $actual === $expected,
             "test_calculate_total",
+            "Total should be $20.00, got $" . number_format($actual, 2)
+        );
+    }
+
+    /**
+     * Test: Calculate fail total for single item
+     * Status: PASSING ✓
+     */
+    private function test_calculate_total_fail() {
+        $invoice = new Invoice("Test Customer");
+        $invoice->addItem("Test Item", 15.00, 2);
+
+        $expected = 20.00;
+        $actual = $invoice->getTotal();
+
+        $this->assert(
+            $actual !== $expected,
+            "test_calculate_total_fail",
             "Total should be $20.00, got $" . number_format($actual, 2)
         );
     }

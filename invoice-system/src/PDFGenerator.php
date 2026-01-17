@@ -1,9 +1,15 @@
 <?php
 
+namespace App;
+
+use App\Invoice;
+use Dompdf\Dompdf;
+use App\InvoiceCalculator;
+
 /**
  * PDFGenerator - Generate PDF invoices
  *
- * Status: NOT IMPLEMENTED
+ * Status: IMPLEMENTED
  *
  * UPDATE (Monday morning): Policy changed - Composer packages are now APPROVED!
  * You may use any PDF library: FPDF, TCPDF, Dompdf, or others.
@@ -34,11 +40,25 @@ class PDFGenerator {
      * @return string PDF file path or content
      * @throws Exception Currently not implemented
      */
-    public function generatePDF($invoice) {
-        throw new Exception(
-            "PDF generation not implemented. " .
-            "You may now use Composer packages (FPDF, TCPDF, Dompdf, etc.)."
-        );
+    public function generatePDF($invoice): string
+    {
+        $dompdf = new Dompdf();
+    
+        $html = $this->generateHTML($invoice);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4');
+        $dompdf->render();
+    
+        $output = $dompdf->output();
+        if(!is_dir(__DIR__ . "/../invoices")) {
+            mkdir(__DIR__ . "/../invoices");
+        }
+    
+        $path = __DIR__ . "/../invoices/invoice_{$invoice->id}.pdf";
+    
+        file_put_contents($path, $output);
+    
+        return $path;
     }
 
     /**
@@ -52,28 +72,122 @@ class PDFGenerator {
      * @return string HTML content
      */
     private function generateHTML($invoice) {
+        InvoiceCalculator::validateInvoice($invoice);
+
+        $tax = (float) InvoiceCalculator::calculateTax($invoice->getTotal());
+        $subtotal = (float) number_format($invoice->getTotal(), 2);
+        $total = $subtotal + $tax;
+
         // Basic template - would need styling
-        $html = '<html><head><title>Invoice</title></head><body>';
-        $html .= '<h1>Invoice #' . $invoice->getId() . '</h1>';
-        $html .= '<p>Customer: ' . htmlspecialchars($invoice->getCustomer()) . '</p>';
-        $html .= '<table border="1">';
-        $html .= '<tr><th>Item</th><th>Price</th><th>Quantity</th><th>Total</th></tr>';
+        // $html = '<html><head><title>Invoice</title></head><body>';
+
+        // $html .= '<h1>Invoice #' . $invoice->getId() . '</h1>';
+        // $html .= '<p>Customer: ' . htmlspecialchars($invoice->getCustomer()) . '</p>';
+        // $html .= '<table border="1" style="width:100%;">';
+        // $html .= '<tr><th>Item</th><th>Price</th><th>Quantity</th><th>Total</th></tr>';
+
+        // foreach ($invoice->getItems() as $item) {
+        //     $qty = isset($item['qty']) ? $item['qty'] : $item['qty'];
+        //     $lineTotal = $item['price'] * $qty;
+
+        //     $html .= '<tr>';
+        //     $html .= '<td style="text-align:center;">' . htmlspecialchars($item['name']) . '</td>';
+        //     $html .= '<td style="text-align:center;">$' . number_format($item['price'], 2) . '</td>';
+        //     $html .= '<td style="text-align:center;">' . $qty . '</td>';
+        //     $html .= '<td style="text-align:center;">$' . number_format($lineTotal, 2) . '</td>';
+        //     $html .= '</tr>';
+        // }
+
+        // $html .= '</table>';
+        // $html .= '<div style="display:flex;flex-direction:column;width:100%;text-align:right;margin-top:10px;">';
+
+        // $html .= '<p style="padding-right: 10px;">
+        //             <strong>Subtotal: $' . $subtotal . '</strong>
+        //         </p>';
+        // $html .= '<p style="padding-right: 10px;">
+        //             <strong>Tax: $' . htmlspecialchars($tax) . '</strong>
+        //         </p>';
+        // $html .= '<p style="padding-right: 10px;">
+        //             <strong>Total: $' . $total . '</strong>
+        //         </p>';
+
+        // $html .= '</div>';
+
+        // $html .= '</body></html>';
+
+        $html = '
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Invoice</title>
+                <style>
+                    body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12px; color: #333; }
+                    h1 { margin-bottom: 5px; }
+                    .meta { font-size: 11px; color: #666; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                    th, td { border: 1px solid #ccc; padding: 8px; }
+                    th { background: #f2f2f2; }
+                    .text-right { text-align: right; }
+                    .totals { width: 40%; margin-left: auto; margin-top: 15px; }
+                    .totals td { border: none; padding: 4px 8px; }
+                    .total-row td { border-top: 1px solid #333; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+
+            <h1>Invoice #' . $invoice->getId() . '</h1>
+            <p class="meta">Customer: ' . htmlspecialchars($invoice->getCustomer()) . '</p>
+
+            <table>
+            <thead>
+            <tr>
+                <th>Item</th>
+                <th class="text-right">Price</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Total</th>
+            </tr>
+            </thead>
+            <tbody>
+            ';
 
         foreach ($invoice->getItems() as $item) {
-            $qty = isset($item['qty']) ? $item['qty'] : $item['qty'];
+            $qty = (int) $item['qty'];
             $lineTotal = $item['price'] * $qty;
 
-            $html .= '<tr>';
-            $html .= '<td>' . htmlspecialchars($item['name']) . '</td>';
-            $html .= '<td>$' . number_format($item['price'], 2) . '</td>';
-            $html .= '<td>' . $qty . '</td>';
-            $html .= '<td>$' . number_format($lineTotal, 2) . '</td>';
-            $html .= '</tr>';
+            $html .= '
+            <tr>
+                <td>' . htmlspecialchars($item['name']) . '</td>
+                <td class="text-right">$' . number_format($item['price'], 2) . '</td>
+                <td class="text-right">' . $qty . '</td>
+                <td class="text-right">$' . number_format($lineTotal, 2) . '</td>
+            </tr>
+            ';
         }
 
-        $html .= '</table>';
-        $html .= '<p><strong>Total: $' . number_format($invoice->getTotal(), 2) . '</strong></p>';
-        $html .= '</body></html>';
+        $html .= '
+            </tbody>
+            </table>
+
+            <table class="totals">
+            <tr>
+                <td>Subtotal</td>
+                <td class="text-right">$' . number_format((float) $subtotal, 2) . '</td>
+            </tr>
+            <tr>
+                <td>Tax</td>
+                <td class="text-right">$' . number_format((float) $tax, 2) . '</td>
+            </tr>
+            <tr class="total-row">
+                <td>Total</td>
+                <td class="text-right">$' . number_format((float) $total, 2) . '</td>
+            </tr>
+            </table>
+
+            </body>
+            </html>
+            ';
+
 
         return $html;
     }

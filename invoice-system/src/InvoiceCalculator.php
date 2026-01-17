@@ -1,5 +1,6 @@
 <?php
 
+namespace App;
 /**
  * InvoiceCalculator - Helper class for invoice calculations
  *
@@ -24,19 +25,19 @@ class InvoiceCalculator {
         $subtotal = trim($subtotal ?? null);
         if (!isset($subtotal) || !is_numeric($subtotal)) {
             $errors['subtotal'] = 'Subtotal must be a number';
-        } elseif ($subtotal <= 0) {
-            $errors['subtotal'] = 'Subtotal must be greater than 0';
+        } elseif ($subtotal < 0) {
+            $errors['subtotal'] = 'Subtotal must be positive number';
         }
 
         $region = trim($region ?? 'US-CA'); // Default 'US-CA'
         if (!isset($region) || !is_string($region) || strlen($region) < 2) {
             $errors['region'] = 'Subtotal must be a valid string';
-        } elseif ($region <= 0) {
-            $errors['region'] = 'Subtotal must be greater than 0';
+        } elseif ($region < 0) {
+            $errors['region'] = 'Subtotal must be positive number';
         }
 
         if(!empty($errors)) {
-            throw new Exception(json_encode($errors), 422);
+            throw new \Exception(json_encode($errors), 422);
         }
 
         return $subtotal * self::taxRateByRegion($region);
@@ -114,12 +115,57 @@ class InvoiceCalculator {
      * - At least one item
      * - etc.
      */
-    public static function validateInvoice($invoice) {
+    public static function validateInvoice(Invoice $invoice) {
         $errors = [];
-
         // TODO: Add actual validation logic
+        // Name: required, string, length 1-255
 
-        return $errors;
+        if(count($invoice->items) <= 0) {
+            $errors['items'] = 'At least one item need to be added to invoice';
+        }
+        $customer = trim($invoice->customer ?? '');
+        if ($customer === '') {
+            $errors['customer'] = 'Customer name can not be empty: ' . $invoice->id;
+        } elseif (strlen($customer) > 255) {
+            $errors['customer'] = 'Customer Name cannot exceed 255 characters: ' . $invoice->id;
+        }
+       
+        foreach($invoice->items as $key => $items) {
+            $name = trim($items['name'] ?? '');
+            if ($name === '') {
+                $errors['items']['name'][$key] = 'Item name can not be empty :' . $key;
+                continue;
+            } elseif (strlen($name) > 255) {
+                $errors['items']['name'][$key] = 'Item Name cannot exceed 255 characters:' . $key;
+                continue;
+            }
+            // Price: required, numeric, > 0
+            $price = trim($items['price'] ?? null);
+            if (!isset($price) || !is_numeric($price)) {
+                $errors['items']['price'][$key] = 'Price must be a number:' . $key;
+                continue;
+            } elseif ($price <= 0) {
+                $errors['items']['price'][$key] = 'Price must be greater than 0:' . $key;
+                continue;
+            }
+    
+            // Quantity: required, integer, >= 0
+            $qty = trim($items['qty'] ?? null);
+            if (!isset($qty) || filter_var($qty, FILTER_VALIDATE_INT) === false) {
+                $errors['items']['qty'][$key] = 'Quantity must be an integer:' . $key;
+                continue;
+            } elseif ((int)$qty < 1) {
+                $errors['items']['qty'][$key] = 'At least one item need to be added:' . $key;
+                continue;
+            }
+
+        }
+
+        if(!empty($errors)) {
+            throw new \Exception(json_encode($errors), 422);
+        }
+
+        return true;
     }
 
     public static function taxRateByRegion(string $region): float
@@ -141,11 +187,11 @@ class InvoiceCalculator {
         );
     
         if (!isset($rates[$country])) {
-            throw new InvalidArgumentException("Unknown country: $country");
+            throw new \InvalidArgumentException("Unknown country: $country");
         }
     
         return $rates[$country][$state]
             ?? $rates[$country]['default']
-            ?? throw new RuntimeException("No default rate for $country");
+            ?? throw new \RuntimeException("No default rate for $country");
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+namespace App;
 /**
  * Invoice Class
  *
@@ -9,11 +10,11 @@
  */
 class Invoice {
 
-    private $customer;
-    private $items = [];
-    private $discount = 0;
-    private $id;
-    private $createdAt;
+    public string $customer;
+    public string $id;
+    public $items = [];
+    public $discount = 0;
+    public $createdAt;
 
     public function __construct($customerName) {
         $this->customer = $customerName;
@@ -26,41 +27,13 @@ class Invoice {
      * Note: Make sure to use consistent naming!
      */
     public function addItem($name, $price, $qty) {
-        // Validations in place
-
-        // Name: required, string, length 1-255
-        $name = trim($name ?? '');
-        if ($name === '') {
-            $errors['name'] = 'Name is required';
-        } elseif (strlen($name) > 255) {
-            $errors['name'] = 'Name cannot exceed 255 characters';
-        }
-
-        // Price: required, numeric, > 0
-        $price = trim($price ?? null);
-        if (!isset($price) || !is_numeric($price)) {
-            $errors['price'] = 'Price must be a number';
-        } elseif ($price <= 0) {
-            $errors['price'] = 'Price must be greater than 0';
-        }
-
-        // Quantity: required, integer, >= 0
-        $qty = trim($qty ?? null);
-        if (!isset($qty) || filter_var($qty, FILTER_VALIDATE_INT) === false) {
-            $errors['qty'] = 'Quantity must be an integer';
-        } elseif ((int)$qty < 0) {
-            $errors['qty'] = 'Quantity cannot be negative';
-        }
-
-        if(!empty($errors)) {
-            throw new Exception(json_encode($errors), 422);
-        }
-     
         $this->items[] = [
             'name' => $name,
             'price' => $price,
-            'qty' => $qty  // Using 'qty' here
+            'qty' => $qty,
         ];
+
+        InvoiceCalculator::validateInvoice($this);
     }
 
     /**
@@ -82,14 +55,14 @@ class Invoice {
      */
     public function applyDiscount($percent) {
         // Started implementing but not sure about requirements
-        // throw new Exception("Not implemented - waiting on client clarification");
+        // throw new \Exception("Not implemented - waiting on client clarification");
 
         // Trying basic implementation but commented out until we get clarity
         // $subtotal = $this->getTotal();
         // $this->discount = $subtotal * ($percent / 100);
 
-        // For now just throw exception
-        throw new Exception("Discount feature incomplete - need business rules from client");
+        // For now just throw \Exception
+        throw new \Exception("Discount feature incomplete - need business rules from client");
     }
 
     /**
@@ -154,7 +127,7 @@ class Invoice {
      */
     public static function loadFromFile($id, $filename = 'data/invoices.json') {
         if (!file_exists($filename)) {
-            throw new Exception("Invoice file not found");
+            throw new \Exception("Invoice file not found");
         }
 
         $contents = file_get_contents($filename);
@@ -181,6 +154,6 @@ class Invoice {
             }
         }
 
-        throw new Exception("Invoice not found: " . $id);
+        throw new \Exception("Invoice not found: " . $id);
     }
 }
