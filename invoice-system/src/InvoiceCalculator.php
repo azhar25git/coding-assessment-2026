@@ -117,7 +117,6 @@ class InvoiceCalculator {
      */
     public static function validateInvoice(Invoice $invoice) {
         $errors = [];
-        // TODO: Add actual validation logic
         // Name: required, string, length 1-255
 
         if(count($invoice->items) <= 0) {
@@ -168,6 +167,9 @@ class InvoiceCalculator {
         return true;
     }
 
+    /**
+     * Get region-wise tax rates defined in the tax_rates.json
+     */
     public static function taxRateByRegion(string $region): float
     {
         static $rates;

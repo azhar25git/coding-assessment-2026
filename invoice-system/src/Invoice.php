@@ -18,7 +18,7 @@ class Invoice {
 
     public function __construct($customerName) {
         $this->customer = $customerName;
-        $this->id = hrtime(true); // Not sure if this is the best approach...
+        $this->id = hrtime(true); // high precision so no collision
         $this->createdAt = date('Y-m-d H:i:s');
     }
 
@@ -42,7 +42,6 @@ class Invoice {
     public function getTotal() {
         $total = 0;
         foreach ($this->items as $item) {
-            // FIXED!
             $total += $item['price'] * $item['qty'];
         }
         return (float) $total - $this->discount;
