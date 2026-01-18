@@ -138,6 +138,10 @@ class PDFGenerator {
                 <td class="text-right">$' . number_format((float) $subtotal, 2) . '</td>
             </tr>
             <tr>
+                <td>Discount</td>
+                <td class="text-right">$' . number_format((float) $invoice->discount, 2) . '</td>
+            </tr>
+            <tr>
                 <td>Tax</td>
                 <td class="text-right">$' . number_format((float) $tax, 2) . '</td>
             </tr>
