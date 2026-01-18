@@ -2,6 +2,7 @@
 
 require_once 'vendor/autoload.php';
 use App\Invoice;
+use App\PDFGenerator;
 use App\InvoiceCalculator;
 
 /**
@@ -36,6 +37,7 @@ class InvoiceTest {
         $this->test_throws_error_at_wrong_qty();
         $this->test_save_and_load();
         $this->test_tax_calculation();
+        $this->test_invoice_pdf_generation();
 
         echo "\n" . str_repeat("=", 50) . "\n";
         echo "Tests Passed: " . $this->testsPassed . "\n";
@@ -136,7 +138,7 @@ class InvoiceTest {
     
             $this->assert(
                 $actual === $expected,
-                "test_throws_error_at_wrong_name",
+                __FUNCTION__,
                 "Total should be $70.00, got $" . number_format($actual, 2)
             );
         }
@@ -145,7 +147,7 @@ class InvoiceTest {
             $expected = '{"items":{"name":["Item name can not be empty :0"]}}';
             $this->assert(
                 $actual === $expected,
-                "test_throws_error_at_wrong_name",
+                __FUNCTION__,
                 $actual
             );
         }
@@ -165,7 +167,7 @@ class InvoiceTest {
             $actual = $invoice->getTotal();
             $this->assert(
                 $actual === $expected,
-                "test_throws_error_at_wrong_price",
+                __FUNCTION__,
                 "Total should be $70.00, got $" . number_format($actual, 2)
             );
         }
@@ -174,7 +176,7 @@ class InvoiceTest {
             $expected = '{"items":{"price":["Price must be greater than 0:0"]}}';
             $this->assert(
                 $actual === $expected,
-                "test_throws_error_at_wrong_price",
+                __FUNCTION__,
                 $actual
             );
         }
@@ -194,7 +196,7 @@ class InvoiceTest {
     
             $this->assert(
                 $actual === $expected,
-                "test_throws_error_at_wrong_qty",
+                __FUNCTION__,
                 "Total should be $20.00, got $" . number_format($actual, 2)
             );
         }
@@ -203,7 +205,7 @@ class InvoiceTest {
             $expected = '{"items":{"qty":["At least one item need to be added:0"]}}';
             $this->assert(
                 $actual === $expected,
-                "test_throws_error_at_wrong_qty",
+                __FUNCTION__,
                 $actual
             );
         }
@@ -211,10 +213,7 @@ class InvoiceTest {
 
     /**
      * Test: Save invoice to file and load it back
-     * Status: FAILING ✗
-     *
-     * Fails because saveToFile() overwrites the entire file
-     * When loading, it can't find the invoice because structure is wrong
+     * Status: PASSING ✓
      */
     private function test_save_and_load() {
         $testFile = __DIR__ . '/../data/test_invoices.json';
@@ -240,13 +239,13 @@ class InvoiceTest {
             $loaded = Invoice::loadFromFile($invoice1->getId(), $testFile);
             $this->assert(
                 $loaded->getCustomer() === "Customer 1",
-                "test_save_and_load",
+                __FUNCTION__,
                 "Should be able to load first invoice"
             );
         } catch (Exception $e) {
             $this->assert(
                 false,
-                "test_save_and_load",
+                __FUNCTION__,
                 "Failed to load invoice: " . $e->getMessage()
             );
         }
@@ -261,8 +260,7 @@ class InvoiceTest {
      * Test: Tax calculation
      * Status: PASSING ✓
      *
-     * This works because the hardcoded tax rate is consistent
-     * (Even though it should load from JSON instead)
+     * Tax rates load from the json file
      */
     private function test_tax_calculation() {
         $subtotal = 100.00;
@@ -273,12 +271,33 @@ class InvoiceTest {
 
         $this->assert(
             $tax === $expected,
-            "test_tax_calculation",
+            __FUNCTION__,
             sprintf(
                 "Tax should be %d, got %d", 
                 number_format($expected, 2), 
                 number_format($tax, 2)
             )
+        );
+    }
+
+    /**
+     * Test: Invoice PDF generation
+     * Status: PASSING ✓
+     */
+    private function test_invoice_pdf_generation() {
+        $invoice = new Invoice("Test Customer");
+  
+        for($i=1; $i<=10; $i++) {
+            $invoice->addItem("Product - " . $i, (float) $i, $i);
+        }
+
+        $pdfGenerator = new PDFGenerator($invoice);
+        $pdfGenerator->generatePDF($invoice);
+
+        $this->assert(
+            file_exists('invoices/invoice_'. $invoice->id .'.pdf'),
+            __FUNCTION__,
+            'PDF for invoice ' . $invoice->id . ' not generated'
         );
     }
 
